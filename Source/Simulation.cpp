@@ -157,7 +157,7 @@ void Simulation::alarmHandler(int sig, siginfo_t* si, void* ctx) {
 		throw TimerExpiredException();
 }
 
-void Simulation::runRT(RTMethod rtMethod, bool startSynch, Logger& logger, Logger& llogger, Logger& rlogger ) {
+void Simulation::runRT(RTMethod rtMethod, bool startSynch, Logger& logger, Logger& llogger, Logger& rlogger, struct timespec *start_time) {
 	char timebuf[8];
 	int ret, sig, timerfd;
 	sigset_t alrmset;
@@ -169,7 +169,7 @@ void Simulation::runRT(RTMethod rtMethod, bool startSynch, Logger& logger, Logge
 
 	// initialize timer / timerfd
 	if (rtMethod == RTTimerFD) {
-		timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
+		timerfd = timerfd_create(CLOCK_REALTIME, 0);
 		if (timerfd < 0) {
 			std::perror("Failed to create timerfd");
 			std::exit(1);
@@ -186,7 +186,7 @@ void Simulation::runRT(RTMethod rtMethod, bool startSynch, Logger& logger, Logge
 		evp.sigev_notify = SIGEV_SIGNAL;
 		evp.sigev_signo = SIGALRM;
 		evp.sigev_value.sival_ptr = this;
-		if (timer_create(CLOCK_MONOTONIC, &evp, &timer)) {
+		if (timer_create(CLOCK_REALTIME, &evp, &timer)) {
 			std::perror("Failed to create timer");
 			std::exit(1);
 		}
@@ -211,11 +211,18 @@ void Simulation::runRT(RTMethod rtMethod, bool startSynch, Logger& logger, Logge
 
 	// arm timer
 	if (rtMethod == RTTimerFD) {
-		if (timerfd_settime(timerfd, 0, &ts, 0) < 0) {
+		int flags = 0;
+		if (!startSynch && start_time) {
+			ts.it_value = *start_time;
+			flags = TFD_TIMER_ABSTIME;
+			std::cerr << "starting at " << ts.it_value.tv_sec << std::endl;
+		}
+		if (timerfd_settime(timerfd, flags, &ts, 0) < 0) {
 			std::perror("Failed to arm timerfd");
 			std::exit(1);
 		}
 	} else if (rtMethod == RTExceptions) {
+		// TODO absolute start time
 		if (timer_settime(timer, 0, &ts, NULL)) {
 			std::perror("Failed to arm timer");
 			std::exit(1);

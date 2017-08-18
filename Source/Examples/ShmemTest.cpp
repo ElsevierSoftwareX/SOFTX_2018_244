@@ -145,10 +145,13 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 	conf.queuelen = 128;
 	conf.polling = true;
 
-	if (argc < 2) {
-		std::cerr << "not enough arguments (either 0 or 1 for the test number)" << std::endl;
+	if (argc < 3) {
+		std::cerr << "not enough arguments (either 0 or 1 for the test number and start time in seconds since epoch)" << std::endl;
 		std::exit(1);
 	}
+	struct timespec start_time;
+	start_time.tv_sec = std::atoi(argv[2]);
+	start_time.tv_nsec = 0;
 
 	// 1H
 	Real Vre = 1.214083e1;
@@ -184,14 +187,14 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 	// Set up simulation
 	Real timeStep = 0.001000;
 	Logger llog(logname), rlog(rlogname);
-	Simulation newSim(comps, 2.0*M_PI*50.0, timeStep, 20, log);
+	Simulation newSim(comps, 2.0*M_PI*50.0, timeStep, 2, log);
 	newSim.addExternalInterface(shmem);
 	if (!strcmp(argv[1], "1")) {
 		comps2 = comps;
 		comps2.pop_back();
 		comps2.push_back(new LinearResistor("r_2", 1, 0, 8));
 		newSim.addSystemTopology(comps2);
-		newSim.setSwitchTime(10, 1);
+		newSim.setSwitchTime(1, 1);
 	} else {
 		// 1H
 		ind->mCurrRe = 1.21408;
@@ -204,7 +207,7 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 
 	// Main Simulation Loop
 	std::cout << "Start simulation." << std::endl;
-	newSim.runRT(RTTimerFD, true, log, llog, rlog);
+	newSim.runRT(RTTimerFD, false, log, llog, rlog, &start_time);
 	std::cout << "Simulation finished." << std::endl;
 	std::cout << ind->mCurrRe << " " << ind->mCurrIm << " " << ind->mCurEqRe << " " << ind->mCurEqIm << " " << ind->mGlr << " " << ind->mGli << " " << ind->mPrevCurFacRe << " " << ind->mPrevCurFacIm << " " << ind->mDeltaVre << " " << ind->mDeltaVim << std::endl;
 
@@ -222,18 +225,25 @@ void DPsim::shmemDistributedRef()
 	Logger log("output.log"), llog("lvector.log"), rlog("rvector.log");
 	std::vector<BaseComponent*> comps, comps2;
 
+	Inductor *ind = new Inductor("l_1", 1, 2, 1);
 	comps.push_back(new VoltSourceRes("v_s", 1, 0, 10000, 0, 1));
-	comps.push_back(new Inductor("l_1", 1, 2, 0.1));
 	comps.push_back(new LinearResistor("r_1", 2, 3, 1));
+	comps.push_back(ind);
 	comps2 = comps;
 	comps.push_back(new LinearResistor("r_2", 3, 0, 10));
 	comps2.push_back(new LinearResistor("r_2", 3, 0, 8));
 
 	// Set up simulation
 	Real timeStep = 0.001;
-	Simulation newSim(comps, 2.0*M_PI*50.0, timeStep, 20, log);
+	Simulation newSim(comps, 2.0*M_PI*50.0, timeStep, 2, log);
 	newSim.addSystemTopology(comps2);
-	newSim.setSwitchTime(10, 1);
+	newSim.setSwitchTime(1, 1);
+	ind->mCurrRe = 1.21408;
+	ind->mCurrIm = -31.7846;
+	ind->mCurEqRe = -3.68764;
+	ind->mCurEqIm = -31.2054;
+	ind->mDeltaVre = 9985.43;
+	ind->mDeltaVim = 381.415;
 
 	// Main Simulation Loop
 	std::cout << "Start simulation." << std::endl;
@@ -243,6 +253,7 @@ void DPsim::shmemDistributedRef()
 		updateProgressBar(newSim.getTime(), newSim.getFinalTime());
 	}
 	std::cout << "Simulation finished." << std::endl;
+	std::cout << ind->mCurrRe << " " << ind->mCurrIm << " " << ind->mCurEqRe << " " << ind->mCurEqIm << " " << ind->mGlr << " " << ind->mGli << " " << ind->mPrevCurFacRe << " " << ind->mPrevCurFacIm << " " << ind->mDeltaVre << " " << ind->mDeltaVim << std::endl;
 
 	for (auto comp : comps) {
 		delete comp;
