@@ -16,30 +16,6 @@ namespace DPsim {
 		/// Inductance [H]
 		Real mInductance;
 		
-		/// Real part of the voltage across the inductor [V]
-		Real mDeltaVre;
-		/// Imaginary part of the voltage across the inductor [V]
-		Real mDeltaVim;
-		
-		/// Real part of the current trough the inductor [A]
-		Real mCurrRe;
-		/// Imaginary part of the current trough the inductor [A]
-		Real mCurrIm;
-		
-		/// Real part of the DC equivalent current source [A]
-		Real mCurEqRe;
-		/// Imaginary part of the DC equivalent current source [A]
-		Real mCurEqIm;
-		
-		/// Real part of the DC equivalent conductance [S]
-		Real mGlr;
-		/// Imaginary part of the DC equivalent conductance [S]
-		Real mGli;
-		
-		/// Auxiliar variables
-		Real mPrevCurFacRe;
-		Real mPrevCurFacIm;
-
 	public:
 		Inductor() { };
 		
@@ -63,6 +39,32 @@ namespace DPsim {
 
 		/// Return current from the previous step
 		Complex getCurrent(SystemModel& system);
+
+		/// Real part of the current trough the inductor [A]
+		Real mCurrRe;
+		/// Imaginary part of the current trough the inductor [A]
+		Real mCurrIm;
+		
+		/// Real part of the DC equivalent current source [A]
+		Real mCurEqRe;
+		/// Imaginary part of the DC equivalent current source [A]
+		Real mCurEqIm;
+		
+		/// Real part of the DC equivalent conductance [S]
+		Real mGlr;
+		/// Imaginary part of the DC equivalent conductance [S]
+		Real mGli;
+		
+		/// Auxiliar variables
+		Real mPrevCurFacRe;
+		Real mPrevCurFacIm;
+
+		/// Real part of the voltage across the inductor [V]
+		Real mDeltaVre;
+		/// Imaginary part of the voltage across the inductor [V]
+		Real mDeltaVim;
+		
+
 	};
 }
 #endif

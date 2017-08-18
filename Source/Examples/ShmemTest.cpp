@@ -140,9 +140,9 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 	std::vector<BaseComponent*> comps, comps2;
 	ShmemInterface *shmem;
 	struct shmem_conf conf;
-	std::string logname;
-	conf.samplelen = 4;
-	conf.queuelen = 1024;
+	std::string logname, rlogname;
+	conf.samplelen = 2;
+	conf.queuelen = 128;
 	conf.polling = true;
 
 	if (argc < 2) {
@@ -150,19 +150,27 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 		std::exit(1);
 	}
 
+	// 1H
+	Real Vre = 1.214083e1;
+	Real Vim = -3.178461e2;
+	Real abs = sqrt(Vre*Vre+Vim*Vim);
+	Real phase = atan(Vim/Vre);
+	Inductor *ind = new Inductor("l_1", 1, 2, 1);
 	if (!strcmp(argv[1], "0")) {
+		rlogname = "rvector0.log";
 		logname = "lvector0.log";
 		comps.push_back(new VoltSourceRes("v_s", 1, 0, 10000, 0, 1));
-		comps.push_back(new Inductor("l_1", 1, 2, 0.1));
+		comps.push_back(ind);
 		comps.push_back(new LinearResistor("r_1", 2, 3, 1));
-		ExternalVoltageSource *evs = new ExternalVoltageSource("v_t", 3, 0, 0, 0, 1);
+		ExternalVoltageSource *evs = new ExternalVoltageSource("v_t", 3, 0, abs, phase, 1);
 		comps.push_back(evs);
 		shmem = new ShmemInterface("/villas1-in", "/villas1-out", &conf);
 		shmem->registerVoltageSource(evs, 0, 1);
 		shmem->registerExportedCurrent(evs, 0, 1);
 	} else if (!strcmp(argv[1], "1")) {
 		logname = "lvector1.log";
-		ExternalCurrentSource *ecs = new ExternalCurrentSource("v_s", 1, 0, 0, 0);
+		rlogname = "rvector1.log";
+		ExternalCurrentSource *ecs = new ExternalCurrentSource("v_s", 1, 0, abs/10, phase);
 		comps.push_back(ecs);
 		comps.push_back(new LinearResistor("r_2", 1, 0, 10));
 		shmem = new ShmemInterface("/villas2-in", "/villas2-out", &conf);
@@ -175,7 +183,7 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 
 	// Set up simulation
 	Real timeStep = 0.001000;
-	Logger llog(logname);
+	Logger llog(logname), rlog(rlogname);
 	Simulation newSim(comps, 2.0*M_PI*50.0, timeStep, 20, log);
 	newSim.addExternalInterface(shmem);
 	if (!strcmp(argv[1], "1")) {
@@ -184,12 +192,21 @@ void DPsim::shmemDistributed(int argc, char *argv[])
 		comps2.push_back(new LinearResistor("r_2", 1, 0, 8));
 		newSim.addSystemTopology(comps2);
 		newSim.setSwitchTime(10, 1);
+	} else {
+		// 1H
+		ind->mCurrRe = 1.21408;
+		ind->mCurrIm = -31.7846;
+		ind->mCurEqRe = -3.68764;
+		ind->mCurEqIm = -31.2054;
+		ind->mDeltaVre = 9985.43;
+		ind->mDeltaVim = 381.415;
 	}
 
 	// Main Simulation Loop
 	std::cout << "Start simulation." << std::endl;
-	newSim.runRT(RTTimerFD, true, log, llog, log);
+	newSim.runRT(RTTimerFD, true, log, llog, rlog);
 	std::cout << "Simulation finished." << std::endl;
+	std::cout << ind->mCurrRe << " " << ind->mCurrIm << " " << ind->mCurEqRe << " " << ind->mCurEqIm << " " << ind->mGlr << " " << ind->mGli << " " << ind->mPrevCurFacRe << " " << ind->mPrevCurFacIm << " " << ind->mDeltaVre << " " << ind->mDeltaVim << std::endl;
 
 	if (!strcmp(argv[1], "1"))
 		delete comps2.back();
