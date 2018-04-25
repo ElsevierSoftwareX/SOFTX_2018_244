@@ -3,4 +3,4 @@
 	url = ../cpowersystems.git
 [submodule "Dependencies/fpotencia"]
 	path = Dependencies/fpotencia
-	url = git@git.rwth-aachen.de:acs/core/simulation/fpotencia.git
+	url = ../fpotencia.git
