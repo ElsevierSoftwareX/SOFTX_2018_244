@@ -2,6 +2,7 @@ add_library(dpsim
 	Utilities.cpp
 	Simulation.cpp
 	MNA_Solver.cpp
+	Powerflow/flow_NRpolar.cpp
 )
 
 set(LIBRARIES cps)
@@ -33,6 +34,7 @@ target_link_libraries(dpsim ${LIBRARIES})
 target_include_directories(dpsim PRIVATE ${INCLUDE_DIRS})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/fpotencia/src)
 
 include(GNUInstallDirs)
 
