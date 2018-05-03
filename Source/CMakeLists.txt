@@ -2,7 +2,7 @@ add_library(dpsim
 	Utilities.cpp
 	Simulation.cpp
 	MNA_Solver.cpp
-	Powerflow/flow_NRpolar.cpp
+	Powerflow/DataToFpot.cpp
 )
 
 set(LIBRARIES cps)

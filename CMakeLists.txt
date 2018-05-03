@@ -60,6 +60,8 @@ configure_file(
 set(INCLUDE_DIRS
 	${CMAKE_CURRENT_BINARY_DIR}/Include/dpsim
 	${CMAKE_CURRENT_SOURCE_DIR}/Include/dpsim
+	${CMAKE_CURRENT_BINARY_DIR}/Include/Powerflow
+	${CMAKE_CURRENT_SOURCE_DIR}/Include/Powerflow
 )
 
 add_subdirectory(Source)
