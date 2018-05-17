@@ -4,4 +4,3 @@
 [submodule "Dependencies/fpotencia"]
 	path = Dependencies/fpotencia
 	url = ../fpotencia.git
-	branch = patch-1
