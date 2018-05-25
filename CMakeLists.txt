@@ -49,8 +49,8 @@ if("${CMAKE_SYSTEM}" MATCHES "Linux")
 	set(Linux_FOUND ON)
 endif()
 
-# Oython is not working on this branch
-set(WITH_PYTHON OFF)
+# Python is not working on this branch
+set(Python_FOUND OFF)
 
 # Options
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
