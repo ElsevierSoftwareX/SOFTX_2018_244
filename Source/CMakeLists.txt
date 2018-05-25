@@ -22,7 +22,6 @@ list(APPEND SOURCES
 	Components/DP_Resistor.cpp
 	Components/DP_SynchronGenerator.cpp
 	Components/DP_SynchronGenerator_VBR.cpp
-	Components/DP_SynchronGenerator_VBR_Simplified.cpp
 	Components/DP_Transformer.cpp
 	Components/DP_Transformer_Ideal.cpp
 	Components/DP_VoltageSource.cpp
@@ -35,7 +34,6 @@ list(APPEND SOURCES
 	Components/EMT_SynchronGenerator.cpp
 	Components/EMT_SynchronGenerator_Simplified.cpp
 	Components/EMT_SynchronGenerator_Simplified_CurrentSource.cpp
-	Components/EMT_SynchronGenerator_VBR.cpp
 	Components/EMT_VoltageSource.cpp
 	Components/EMT_VoltageSource_Freq.cpp
 	Components/EMT_VoltageSource_Norton.cpp
