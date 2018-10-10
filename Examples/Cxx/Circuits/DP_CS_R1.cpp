@@ -1,7 +1,7 @@
 /** Reference Circuits
  *
  * @author Markus Mirz <mmirz@eonerc.rwth-aachen.de>
- * @copyright 2017, Institute for Automation of Complex Power Systems, EONERC
+ * @copyright 2017-2018, Institute for Automation of Complex Power Systems, EONERC
  *
  * DPsim
  *
@@ -19,46 +19,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *********************************************************************************/
 
-
 #include <DPsim.h>
 
 using namespace DPsim;
-using namespace CPS::EMT;
-using namespace CPS::EMT::Ph1;
+using namespace CPS::DP;
+using namespace CPS::DP::Ph1;
 
 int main(int argc, char* argv[]) {
+	// Define simulation scenario
+	Real timeStep = 0.0001;
+	Real finalTime = 0.1;
+	String simName = "DP_CS_R1";
+
 	// Nodes
 	auto n1 = Node::make("n1");
-	auto n2 = Node::make("n2");
-	auto n3 = Node::make("n3");
 
 	// Components
-	auto vin = VoltageSource::make("v_in");
+	auto cs = CurrentSource::make("cs");
 	auto r1 = Resistor::make("r_1");
-	auto r2 = Resistor::make("r_2");
-	auto r3 = Resistor::make("r_3");
 
 	// Topology
-	vin->connect({ n1, n2 });
-	r1->connect({ n1, Node::GND });
-	r2->connect({ n2, Node::GND });
-	r3->connect({ n2, Node::GND });
+	cs->connect({ Node::GND, n1 });
+	r1->connect({ Node::GND, n1 });
 
-	// Parameters
-	vin->setParameters(10);
-	r1->setParameters(5);
-	r2->setParameters(10);
-	r3->setParameters(2);
+	cs->setParameters(Complex(10, 0));
+	r1->setParameters(1);
 
 	// Define system topology
-	SystemTopology system(50, SystemNodeList{n1, n2, n3, Node::GND}, SystemComponentList{vin, r1, r2, r3});
+	auto sys = SystemTopology(50, SystemNodeList{n1}, SystemComponentList{cs, r1});
 
-	// Define simulation scenario
-	Real timeStep = 0.00005;
-	Real finalTime = 0.2;
-	String simName = "EMT_IdealVS_R1";
+	// Logging
+	auto logger = DataLogger::make(simName);
+	logger->addAttribute("v1", n1->attribute("v"));
+	logger->addAttribute("i10", r1->attribute("i_intf"));
 
-	Simulation sim(simName, system, timeStep, finalTime, Domain::EMT);
+	Simulation sim(simName, sys, timeStep, finalTime);
+	sim.addLogger(logger);
+
 	sim.run();
 
 	return 0;

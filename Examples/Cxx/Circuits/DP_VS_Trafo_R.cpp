@@ -1,7 +1,7 @@
 /** Reference Circuits
  *
  * @author Markus Mirz <mmirz@eonerc.rwth-aachen.de>
- * @copyright 2017, Institute for Automation of Complex Power Systems, EONERC
+ * @copyright 2017-2018, Institute for Automation of Complex Power Systems, EONERC
  *
  * DPsim
  *
@@ -23,7 +23,8 @@
 #include <DPsim.h>
 
 using namespace DPsim;
-using namespace CPS::EMT::Ph1;
+using namespace CPS::DP;
+using namespace CPS::DP::Ph1;
 
 int main(int argc, char* argv[]) {
 	// Nodes
@@ -32,38 +33,35 @@ int main(int argc, char* argv[]) {
 	auto n3 = Node::make("n3");
 
 	// Components
-	auto vs = VoltageSourceNorton::make("v_s");
-	auto rl = Resistor::make("r_line");
-	auto ll = Inductor::make("l_line");
+	auto v1 = VoltageSource::make("v_1");
+//	auto l1 = Inductor::make("l_1");
+//	auto r2 = Resistor::make("r_2");
+	auto t1 = Transformer::make("trafo_1");
+	auto r1 = Resistor::make("r_1");
 
 	// Topology
-	vs->connect({n1, GND});
-	rl->connect({n1, n2});
-	ll->connect({n2, n3});
+	v1->connect({ Node::GND, n1 });
+//	l1->connect({ n1, n2 });
+//	r2->connect({ n2, Node::GND });
+	t1->connect({ n1, n2 });
+	r1->connect({ n2, Node::GND });
 
 	// Parameters
-	vs->setParameters(Complex(10000, 0), 1);
-	rl->setParameters(1);
-	ll->setParameters(1);
+	v1->setParameters(CPS::Math::polarDeg(100., 0 * -90.));
+//	l1->setParameters(0.1);
+//	r2->setParameters(1);
+	t1->setParameters(10, 0, 0, 0.1);
+	r1->setParameters(1);
 
 	// Define system topology
-	SystemTopology system0(50, {GND, n1, n2, n3}, {vs, rl, ll});
-
-	SystemTopology system1 = system0;
-	SystemTopology system2 = system0;
-	system1.mComponents.push_back(Resistor::make("r_load", 2, DEPRECATEDGND, 1000));
-	system2.mComponents.push_back(Resistor::make("r_load", 2, DEPRECATEDGND, 800));
+	SystemTopology system(50, SystemNodeList{n1, n2, n3, Node::GND}, SystemComponentList{v1, t1, r1});
 
 	// Define simulation scenario
-	Real timeStep = 0.001;
-	Real finalTime = 0.3;
-	String simName = "EMT_ResVS_RxLine_Switch1_" + std::to_string(timeStep);
+	Real timeStep = 0.00005;
+	Real finalTime = 0.2;
+	String simName = "DP_IdealVS_Trafo_" + std::to_string(timeStep);
 
-	Simulation sim(simName, system1, timeStep, finalTime,
-		Domain::EMT, Solver::Type::MNA, Logger::Level::INFO);
-	sim.addSystemTopology(system2);
-	sim.setSwitchTime(0.1, 1);
-
+	Simulation sim(simName, system, timeStep, finalTime);
 	sim.run();
 
 	return 0;

@@ -22,48 +22,37 @@
 #include <DPsim.h>
 
 using namespace DPsim;
-using namespace CPS::EMT;
-using namespace CPS::EMT::Ph1;
+using namespace CPS::DP;
+using namespace CPS::DP::Ph1;
 
 int main(int argc, char* argv[]) {
+	// Define simulation scenario
+	Real timeStep = 0.0001;
+	Real finalTime = 0.1;
+	String simName = "DP_VS_R1";
+
 	// Nodes
 	auto n1 = Node::make("n1");
-	auto n2 = Node::make("n2");
-	auto n3 = Node::make("n3");
 
 	// Components
-	auto vs = VoltageSource::make("vs");
-	auto r1 = Resistor::make("r_1");
-	auto r2 = Resistor::make("r_2");
-	auto r3 = Resistor::make("r_3");
-	auto r4 = Resistor::make("r_4");
-	auto cs = CurrentSource::make("cs");
+	auto vs = VoltageSource::make("v_1");
+	vs->setParameters(Complex(10, 0));
+	auto r = Resistor::make("r_1");
+	r->setParameters(1);
 
 	// Topology
-	vs->connect({ Node::GND, n1 });
-	r1->connect({ n1, n2 });
-	r2->connect({ n2, Node::GND });
-	r3->connect({ n2, n3 });
-	r4->connect({ n3, Node::GND });
-	cs->connect({ Node::GND, n3 });
+	vs->connect({Node::GND, n1});
+	r->connect({n1, Node::GND});
 
-	// Parameters
-	vs->setParameters(10);
-	r1->setParameters(1);
-	r2->setParameters(1);
-	r3->setParameters(10);
-	r4->setParameters(5);
-	cs->setParameters(1);
+	auto sys = SystemTopology(50, SystemNodeList{n1}, SystemComponentList{vs, r});
 
-	// Define system topology
-	auto sys = SystemTopology(50, SystemNodeList{n1, n2, n3}, SystemComponentList{vs, r1, r2, r3, r4, cs});
+	// Logging
+	auto logger = DataLogger::make(simName);
+	logger->addAttribute("v1", n1->attribute("v"));
 
-	// Define simulation scenario
-	Real timeStep = 0.001;
-	Real finalTime = 0.1;
-	String simName = "EMT_IdealVS_CS_R4";
+	Simulation sim(simName, sys, timeStep, finalTime);
+	sim.addLogger(logger);
 
-	Simulation sim(simName, sys, timeStep, finalTime, Domain::EMT);
 	sim.run();
 
 	return 0;

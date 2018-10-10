@@ -19,50 +19,52 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *********************************************************************************/
 
+
 #include <DPsim.h>
 
 using namespace DPsim;
-using namespace CPS::DP;
-using namespace CPS::DP::Ph1;
+using namespace CPS::EMT;
+using namespace CPS::EMT::Ph1;
 
 int main(int argc, char* argv[]) {
+	// Define simulation scenario
+	Real timeStep = 0.0001;
+	Real finalTime = 0.1;
+	String simName = "EMT_VS_R1";
+
 	// Nodes
 	auto n1 = Node::make("n1");
 	auto n2 = Node::make("n2");
 	auto n3 = Node::make("n3");
 
 	// Components
-	auto vs = VoltageSource::make("vs");
+	auto vin = VoltageSource::make("v_in");
+	vin->setParameters(10);
 	auto r1 = Resistor::make("r_1");
+	r1->setParameters(5);
 	auto r2 = Resistor::make("r_2");
+	r2->setParameters(10);
 	auto r3 = Resistor::make("r_3");
-	auto r4 = Resistor::make("r_4");
-	auto cs = CurrentSource::make("cs");
+	r3->setParameters(2);
 
 	// Topology
-	vs->connect({ Node::GND, n1 });
-	r1->connect({ n1, n2 });
+	vin->connect({ n1, n2 });
+	r1->connect({ n1, Node::GND });
 	r2->connect({ n2, Node::GND });
-	r3->connect({ n2, n3 });
-	r4->connect({ n3, Node::GND });
-	cs->connect({ Node::GND, n3 });
-
-	vs->setParameters(10);
-	r1->setParameters(1);
-	r2->setParameters(1);
-	r3->setParameters(10);
-	r4->setParameters(5);
-	cs->setParameters(1);
+	r3->connect({ n2, Node::GND });
 
 	// Define system topology
-	auto sys = SystemTopology(50, SystemNodeList{n1, n2, n3}, SystemComponentList{vs, r1, r2, r3, r4, cs});
+	SystemTopology system(50, SystemNodeList{n1, n2, n3, Node::GND}, SystemComponentList{vin, r1, r2, r3});
 
-	// Define simulation scenario
-	Real timeStep = 0.001;
-	Real finalTime = 0.1;
-	String simName = "DP_IdealVS_CS_R4";
+	// Logging
+	auto logger = DataLogger::make(simName);
+	logger->addAttribute("v1", n1->attribute("v"));
+	logger->addAttribute("v2", n2->attribute("v"));
+	logger->addAttribute("v3", n3->attribute("v"));
 
-	Simulation sim(simName, sys, timeStep, finalTime);
+	Simulation sim(simName, system, timeStep, finalTime, Domain::EMT);
+	sim.addLogger(logger);
+
 	sim.run();
 
 	return 0;

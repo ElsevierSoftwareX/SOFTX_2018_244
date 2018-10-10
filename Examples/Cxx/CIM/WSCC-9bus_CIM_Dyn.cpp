@@ -1,10 +1,8 @@
-/** EventHandler
- *
- * @file
+/**
  * @author Markus Mirz <mmirz@eonerc.rwth-aachen.de>
  * @copyright 2017-2018, Institute for Automation of Complex Power Systems, EONERC
  *
- * CPowerSystems
+ * DPsim
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,39 +18,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *********************************************************************************/
 
-#pragma once
+#include <iostream>
+#include <list>
 
-#include <vector>
-#include <dpsim/Config.h>
-#include <cps/Definitions.h>
-#include <cps/Logger.h>
+#include <DPsim.h>
 
-namespace DPsim {
+using namespace DPsim;
+using namespace CPS;
 
-	class Event {
-	public:
-		std::function<void()> mfunction;
+int main(int argc, char *argv[]) {
+#ifdef _WIN32
+	String path("..\\..\\..\\..\\dpsim\\Examples\\CIM\\WSCC-09_RX_Dyn\\");
+#elif defined(__linux__) || defined(__APPLE__)
+	String path("Examples/CIM/WSCC-09_RX_Dyn/");
+#endif
+
+	std::list<String> filenames = {
+		path + "WSCC-09_RX_DI.xml",
+		path + "WSCC-09_RX_EQ.xml",
+		path + "WSCC-09_RX_SV.xml",
+		path + "WSCC-09_RX_TP.xml"
 	};
 
-	class EventHandler {
+	String simName = "WSCC-9bus_dyn";
 
-	protected:
-		std::map<Real, std::vector<Event> > mEvents;
+	CIM::Reader reader(simName, Logger::Level::DEBUG, Logger::Level::DEBUG);
+	SystemTopology sys = reader.loadCIM(60, filenames);
 
-	public:
-		/// Creates new reader with a name for logging.
-		/// The first log level is for the reader and the second for the generated components.
-		EventHandler(String name,			
-			Logger::Level logLevel = Logger::Level::NONE);
+	Simulation sim(simName, sys, 0.0001, 0.1,
+		Domain::DP, Solver::Type::MNA, Logger::Level::DEBUG, true);
+	sim.run();
 
-		addEvent(Real startTime, Event newEvent, Int iterations = 1, Real period = 0) {
-			std::vector<Event> events;
-			events.push_back(newEvent);
-			if (!mEvents.insert(std::make_pair(startTime, events)).second) {
-				mEvents[startTime].push_back(newEvent);
-			}
-		}
-
-	};
+	return 0;
 }
-

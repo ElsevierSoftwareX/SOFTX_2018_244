@@ -1,7 +1,7 @@
 /** Reference Circuits
  *
  * @author Markus Mirz <mmirz@eonerc.rwth-aachen.de>
- * @copyright 2017, Institute for Automation of Complex Power Systems, EONERC
+ * @copyright 2017-2018, Institute for Automation of Complex Power Systems, EONERC
  *
  * DPsim
  *
@@ -26,29 +26,40 @@ using namespace CPS::DP;
 using namespace CPS::DP::Ph1;
 
 int main(int argc, char* argv[]) {
+	// Define simulation scenario
+	Real timeStep = 0.0001;
+	Real finalTime = 0.1;
+	String simName = "DP_VS_RL1";
+
 	// Nodes
 	auto n1 = Node::make("n1");
+	auto n2 = Node::make("n2");
 
 	// Components
-	auto vs = VoltageSource::make("v_1");
-	auto r = Resistor::make("r_1");
-
-	// Topology
-	vs->connect({Node::GND, n1});
-	r->connect({n1, Node::GND});
-
-	// Parameters
+	auto vs = VoltageSource::make("vs");
 	vs->setParameters(Complex(10, 0));
-	r->setParameters(1);
+	vs->connect(Node::List{ Node::GND, n1 });
 
-	auto sys = SystemTopology(50, SystemNodeList{n1}, SystemComponentList{vs, r});
+	auto r1 = Resistor::make("r_1");
+	r1->setParameters(5);
+	r1->connect(Node::List{ n1, n2 });
 
-	// Define simulation scenario
-	Real timeStep = 0.00005;
-	Real finalTime = 0.2;
-	String simName = "DP_IdealVS_R_1";
+	auto l1 = Inductor::make("l_1");
+	l1->setParameters(0.02);
+	l1->connect(Node::List{ n2, Node::GND });
+
+	// Define system topology
+	auto sys = SystemTopology(50, SystemNodeList{n1, n2}, SystemComponentList{vs, r1, l1});
+
+	// Logger
+	auto logger = DataLogger::make(simName);
+	logger->addAttribute("v1", n1->attribute("v"));
+	logger->addAttribute("v2", n2->attribute("v"));
+	logger->addAttribute("i12", r1->attribute("i_intf"));
 
 	Simulation sim(simName, sys, timeStep, finalTime);
+	sim.addLogger(logger);
+
 	sim.run();
 
 	return 0;

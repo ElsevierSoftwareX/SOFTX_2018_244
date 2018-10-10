@@ -1,7 +1,7 @@
 /** Reference Circuits
  *
  * @author Markus Mirz <mmirz@eonerc.rwth-aachen.de>
- * @copyright 2017, Institute for Automation of Complex Power Systems, EONERC
+ * @copyright 2017-2018, Institute for Automation of Complex Power Systems, EONERC
  *
  * DPsim
  *
@@ -22,37 +22,44 @@
 #include <DPsim.h>
 
 using namespace DPsim;
-using namespace CPS::DP;
-using namespace CPS::DP::Ph1;
+using namespace CPS::EMT;
+using namespace CPS::EMT::Ph1;
 
 int main(int argc, char* argv[]) {
+	// Define simulation scenario
+	Real timeStep = 0.0001;
+	Real finalTime = 0.1;
+	String simName = "EMT_VS_RC1";
+
 	// Nodes
 	auto n1 = Node::make("n1");
 	auto n2 = Node::make("n2");
 
 	// Components
-	auto vs = VoltageSource::make("v_1");
-	auto line = RxLine::make("Line_1");
-	auto r = Resistor::make("r_1");
+	auto vs = VoltageSource::make("vs");
+	vs->setParameters(Complex(10, 0), 50);
+	auto r1 = Resistor::make("r_1");
+	r1->setParameters(1);
+	auto c1 = Capacitor::make("c_1");
+	c1->setParameters(0.001);
 
 	// Topology
 	vs->connect({ Node::GND, n1 });
-	line->connect({ n1, n2 });
-	r->connect({ n2, Node::GND });
+	r1->connect({ n1, n2 });
+	c1->connect({ n2, Node::GND });
 
-	// Parameters
-	vs->setParameters(Complex(10, 0));
-	line->setParameters(0.1, 0.001);
-	r->setParameters(20);
+	// Define system topology
+	auto sys = SystemTopology(50, SystemNodeList{n1, n2}, SystemComponentList{vs, r1, c1});
 
-	auto sys = SystemTopology(50, SystemNodeList{n1, n2}, SystemComponentList{vs, line, r});
+	// Logging
+	auto logger = DataLogger::make(simName);
+	logger->addAttribute("v1", n1->attribute("v"));
+	logger->addAttribute("v2", n2->attribute("v"));
+	logger->addAttribute("i12", r1->attribute("i_intf"));
 
-	// Define simulation scenario
-	Real timeStep = 0.00001;
-	Real finalTime = 0.1;
-	String simName = "DP_IdealVS_RxLine1_" + std::to_string(timeStep);
+	Simulation sim(simName, sys, timeStep, finalTime, Domain::EMT);
+	sim.addLogger(logger);
 
-	Simulation sim(simName, sys, timeStep, finalTime);
 	sim.run();
 
 	return 0;

@@ -19,41 +19,59 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *********************************************************************************/
 
-#include <DPsim.h>
+#include "DPsim.h"
 
 using namespace DPsim;
 using namespace CPS::EMT;
 using namespace CPS::EMT::Ph1;
 
 int main(int argc, char* argv[]) {
+	// Define simulation scenario
+	Real timeStep = 0.0001;
+	Real finalTime = 0.1;
+	String simName = "EMT_VS_CS_R4_AC";
+
 	// Nodes
 	auto n1 = Node::make("n1");
 	auto n2 = Node::make("n2");
+	auto n3 = Node::make("n3");
 
 	// Components
 	auto vs = VoltageSource::make("vs");
+	vs->setParameters(10, 50);
 	auto r1 = Resistor::make("r_1");
-	auto l1 = Inductor::make("l_1");
+	r1->setParameters(1);
+	auto r2 = Resistor::make("r_2");
+	r2->setParameters(1);
+	auto r3 = Resistor::make("r_3");
+	r3->setParameters(10);
+	auto r4 = Resistor::make("r_4");
+	r4->setParameters(5);
+	auto cs = CurrentSource::make("cs");
+	cs->setParameters(1, 50);
 
 	// Topology
-	vs->connect({ Node::GND, n1 });
-	r1->connect({ n1, n2 });
-	l1->connect({ n2, Node::GND });
-
-	// Parameters
-	vs->setParameters(Complex(10, 0));
-	r1->setParameters(1);
-	l1->setParameters(1);
+	vs->connect(Node::List{ Node::GND, n1 });
+	r1->connect(Node::List{ n1, n2 });
+	r2->connect(Node::List{ n2, Node::GND });
+	r3->connect(Node::List{ n2, n3 });
+	r4->connect(Node::List{ n3, Node::GND });
+	cs->connect(Node::List{ Node::GND, n3 });
 
 	// Define system topology
-	auto sys = SystemTopology(50, SystemNodeList{n1, n2}, SystemComponentList{vs, r1, l1});
+	auto sys = SystemTopology(50, SystemNodeList{n1, n2, n3}, SystemComponentList{vs, r1, r2, r3, r4, cs});
 
-	// Define simulation scenario
-	Real timeStep = 0.001;
-	Real finalTime = 0.1;
-	String simName = "EMT_IdealVS_RL1";
+	// Logging
+	auto logger = DataLogger::make(simName);
+	logger->addAttribute("v1", n1->attribute("v"));
+	logger->addAttribute("v2", n2->attribute("v"));
+	logger->addAttribute("v3", n3->attribute("v"));
+	logger->addAttribute("i12", r1->attribute("i_intf"));
+	logger->addAttribute("i23", r3->attribute("i_intf"));
 
 	Simulation sim(simName, sys, timeStep, finalTime, Domain::EMT);
+	sim.addLogger(logger);
+
 	sim.run();
 
 	return 0;

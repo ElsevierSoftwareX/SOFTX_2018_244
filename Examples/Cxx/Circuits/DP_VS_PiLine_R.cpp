@@ -28,25 +28,29 @@ using namespace CPS::DP::Ph1;
 int main(int argc, char* argv[]) {
 	// Nodes
 	auto n1 = Node::make("n1");
+	auto n2 = Node::make("n2");
 
 	// Components
-	auto cs = CurrentSource::make("cs");
-	auto r1 = Resistor::make("r_1");
+	auto vs = VoltageSource::make("v_1");
+	auto line = RxLine::make("Line_1");
+	auto r = Resistor::make("r_1");
 
 	// Topology
-	cs->connect({ Node::GND, n1 });
-	r1->connect({ Node::GND, n1 });
+	vs->connect({ Node::GND, n1 });
+	line->connect({ n1, n2 });
+	r->connect({ n2, Node::GND });
 
-	cs->setParameters(Complex(10, 0));
-	r1->setParameters(1);
+	// Parameters
+	vs->setParameters(Complex(10, 0));
+	line->setParameters(0.1, 0.001);
+	r->setParameters(20);
 
-	// Define system topology
-	auto sys = SystemTopology(50, SystemNodeList{n1}, SystemComponentList{cs, r1});
+	auto sys = SystemTopology(50, SystemNodeList{n1, n2}, SystemComponentList{vs, line, r});
 
 	// Define simulation scenario
-	Real timeStep = 0.001;
+	Real timeStep = 0.00001;
 	Real finalTime = 0.1;
-	String simName = "DP_CS_R_1";
+	String simName = "DP_IdealVS_RxLine1_" + std::to_string(timeStep);
 
 	Simulation sim(simName, sys, timeStep, finalTime);
 	sim.run();
